@@ -207,8 +207,8 @@ function exportScore() {
     // File name with timestamp
     const safeDate = now.toISOString().replace(/[:.]/g, "-");
     const link = document.createElement("a");
-    link.download = "gators-final-score-" + safeDate + ".png";
-    link.href = canvas.toDataURL("image/png");
+    link.download = "gators-final-score-" + safeDate + ".PNG";
+    link.href = canvas.toDataURL("image/PNG");
     link.click();
   };
 
