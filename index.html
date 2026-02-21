@@ -1,138 +1,227 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Gators Scoreboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Gators Scoreboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #004a87;
-      color: white;
-      margin: 0;
-      padding: 20px;
-    }
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: #004a87;
+  color: white;
+  margin: 0;
+  padding: 20px;
+}
 
-    h1 {
-      margin-bottom: 10px;
-    }
+h1 {
+  margin-bottom: 10px;
+}
 
-    .score-container {
-      display: flex;
-      justify-content: space-around;
-      margin: 30px 0;
-    }
+input {
+  padding: 8px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  text-align: center;
+}
 
-    .team {
-      background: #ffffff;
-      color: #004a87;
-      padding: 20px;
-      border-radius: 15px;
-      width: 40%;
-    }
+.score-container {
+  display: flex;
+  justify-content: space-around;
+  margin: 30px 0;
+  flex-wrap: wrap;
+}
 
-    .score {
-      font-size: 60px;
-      margin: 20px 0;
-    }
+.team {
+  background: white;
+  color: #004a87;
+  padding: 20px;
+  border-radius: 15px;
+  width: 300px;
+  margin: 10px;
+}
 
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      margin: 5px;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-    }
+.score {
+  font-size: 70px;
+  margin: 20px 0;
+}
 
-    .add { background: #28a745; color: white; }
-    .sub { background: #dc3545; color: white; }
+button {
+  padding: 10px 15px;
+  font-size: 18px;
+  margin: 5px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
 
-    .export-btn {
-      background: #ffc107;
-      color: black;
-      margin-top: 20px;
-    }
-  </style>
+.add1 { background: #28a745; color: white; }
+.add6 { background: #17a2b8; color: white; }
+.sub { background: #dc3545; color: white; }
+.export-btn { background: #ffc107; color: black; margin-top: 20px; }
+
+.reset-btn {
+  background: black;
+  color: white;
+  margin-top: 10px;
+}
+</style>
 </head>
 
 <body>
 
-  <h1>🐊 Gators Scoreboard</h1>
+<h1>🐊 Gators Scoreboard</h1>
 
-  <div class="score-container">
-    <div class="team">
-      <h2>Gators</h2>
-      <div class="score" id="gatorsScore">0</div>
-      <button class="add" onclick="updateScore('gators',1)">+1</button>
-      <button class="sub" onclick="updateScore('gators',-1)">-1</button>
-    </div>
+<div class="score-container">
 
-    <div class="team">
-      <h2>Opponent</h2>
-      <div class="score" id="opponentScore">0</div>
-      <button class="add" onclick="updateScore('opponent',1)">+1</button>
-      <button class="sub" onclick="updateScore('opponent',-1)">-1</button>
-    </div>
+  <div class="team">
+    <h2>Gators</h2>
+    <div class="score" id="gatorsScore">0</div>
+    <button class="add1" onclick="updateScore('gators',1)">+1</button>
+    <button class="add6" onclick="updateScore('gators',6)">+6</button>
+    <button class="sub" onclick="updateScore('gators',-1)">-1</button>
   </div>
 
-  <button class="export-btn" onclick="exportScore()">Export Score Image</button>
+  <div class="team">
+    <input type="text" id="opponentName" placeholder="Opponent Name" oninput="saveState()">
+    <div class="score" id="opponentScore">0</div>
+    <button class="add1" onclick="updateScore('opponent',1)">+1</button>
+    <button class="add6" onclick="updateScore('opponent',6)">+6</button>
+    <button class="sub" onclick="updateScore('opponent',-1)">-1</button>
+  </div>
 
-  <canvas id="exportCanvas" width="800" height="600" style="display:none;"></canvas>
+</div>
+
+<button class="export-btn" onclick="exportScore()">Export Score Image</button>
+<br>
+<button class="reset-btn" onclick="resetGame()">Reset Game</button>
 
 <script>
+
+// ----------------------
+// STATE VARIABLES
+// ----------------------
 
 let gatorsScore = 0;
 let opponentScore = 0;
 
+// ----------------------
+// LOAD SAVED DATA
+// ----------------------
+
+window.onload = function() {
+  const saved = JSON.parse(localStorage.getItem("gatorsGame"));
+
+  if (saved) {
+    gatorsScore = saved.gators;
+    opponentScore = saved.opponent;
+    document.getElementById("gatorsScore").innerText = gatorsScore;
+    document.getElementById("opponentScore").innerText = opponentScore;
+    document.getElementById("opponentName").value = saved.opponentName;
+  }
+};
+
+// ----------------------
+// SAVE STATE
+// ----------------------
+
+function saveState() {
+  const data = {
+    gators: gatorsScore,
+    opponent: opponentScore,
+    opponentName: document.getElementById("opponentName").value
+  };
+
+  localStorage.setItem("gatorsGame", JSON.stringify(data));
+}
+
+// ----------------------
+// UPDATE SCORE
+// ----------------------
+
 function updateScore(team, value) {
-  if (team === 'gators') {
+
+  if (team === "gators") {
     gatorsScore = Math.max(0, gatorsScore + value);
     document.getElementById("gatorsScore").innerText = gatorsScore;
   } else {
     opponentScore = Math.max(0, opponentScore + value);
     document.getElementById("opponentScore").innerText = opponentScore;
   }
+
+  saveState();
 }
+
+// ----------------------
+// RESET GAME
+// ----------------------
+
+function resetGame() {
+  if (confirm("Reset the game?")) {
+    gatorsScore = 0;
+    opponentScore = 0;
+    document.getElementById("gatorsScore").innerText = 0;
+    document.getElementById("opponentScore").innerText = 0;
+    document.getElementById("opponentName").value = "";
+    localStorage.removeItem("gatorsGame");
+  }
+}
+
+// ----------------------
+// LOGO PRELOAD
+// ----------------------
+
+let logoImage = new Image();
+logoImage.src = "logo.png"; // Upload logo.png to same GitHub repo
+let logoLoaded = false;
+
+logoImage.onload = function() {
+  logoLoaded = true;
+};
+
+// ----------------------
+// EXPORT IMAGE
+// ----------------------
 
 function exportScore() {
 
-  const canvas = document.getElementById("exportCanvas");
+  if (!logoLoaded) {
+    alert("Logo still loading. Try again in 1 second.");
+    return;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1080;
   const ctx = canvas.getContext("2d");
 
   // Background
   ctx.fillStyle = "#004a87";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Load logo
-  const logo = new Image();
-  logo.crossOrigin = "anonymous";
-  logo.src = "https://share.google/weH4PHnGAWj01eBz7";
+  // Logo
+  ctx.drawImage(logoImage, 340, 80, 400, 400);
 
-  logo.onload = function() {
+  // Title
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.font = "bold 70px Arial";
+  ctx.fillText("FINAL SCORE", 540, 600);
 
-    // Draw logo
-    ctx.drawImage(logo, 300, 40, 200, 200);
+  // Scores
+  ctx.font = "bold 90px Arial";
+  ctx.fillText("GATORS " + gatorsScore, 540, 760);
 
-    // Title
-    ctx.fillStyle = "white";
-    ctx.font = "bold 50px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("GAME FINAL SCORE", 400, 300);
+  const opponentName = document.getElementById("opponentName").value || "OPPONENT";
+  ctx.fillText(opponentName.toUpperCase() + " " + opponentScore, 540, 900);
 
-    // Scores
-    ctx.font = "bold 80px Arial";
-    ctx.fillText("GATORS " + gatorsScore, 400, 400);
-    ctx.fillText("OPPONENT " + opponentScore, 400, 500);
-
-    // Download image
-    const link = document.createElement("a");
-    link.download = "gators-score.png";
-    link.href = canvas.toDataURL();
-    link.click();
-  };
+  // Download
+  const link = document.createElement("a");
+  link.download = "gators-final-score.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
 }
 
 </script>
