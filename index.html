@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -61,12 +61,8 @@ button {
 .add6 { background: #17a2b8; color: white; }
 .sub { background: #dc3545; color: white; }
 .export-btn { background: #ffc107; color: black; margin-top: 20px; }
+.reset-btn { background: black; color: white; margin-top: 10px; }
 
-.reset-btn {
-  background: black;
-  color: white;
-  margin-top: 10px;
-}
 </style>
 </head>
 
@@ -100,16 +96,12 @@ button {
 
 <script>
 
-// ----------------------
-// STATE VARIABLES
-// ----------------------
+// ---------------- STATE ----------------
 
 let gatorsScore = 0;
 let opponentScore = 0;
 
-// ----------------------
-// LOAD SAVED DATA
-// ----------------------
+// ---------------- LOAD SAVED ----------------
 
 window.onload = function() {
   const saved = JSON.parse(localStorage.getItem("gatorsGame"));
@@ -123,9 +115,7 @@ window.onload = function() {
   }
 };
 
-// ----------------------
-// SAVE STATE
-// ----------------------
+// ---------------- SAVE ----------------
 
 function saveState() {
   const data = {
@@ -137,9 +127,7 @@ function saveState() {
   localStorage.setItem("gatorsGame", JSON.stringify(data));
 }
 
-// ----------------------
-// UPDATE SCORE
-// ----------------------
+// ---------------- UPDATE SCORE ----------------
 
 function updateScore(team, value) {
 
@@ -154,9 +142,7 @@ function updateScore(team, value) {
   saveState();
 }
 
-// ----------------------
-// RESET GAME
-// ----------------------
+// ---------------- RESET ----------------
 
 function resetGame() {
   if (confirm("Reset the game?")) {
@@ -169,28 +155,9 @@ function resetGame() {
   }
 }
 
-// ----------------------
-// LOGO PRELOAD
-// ----------------------
-
-let logoImage = new Image();
-logoImage.src = "logo.PNG"; // Upload logo.png to same GitHub repo
-let logoLoaded = false;
-
-logoImage.onload = function() {
-  logoLoaded = true;
-};
-
-// ----------------------
-// EXPORT IMAGE
-// ----------------------
+// ---------------- EXPORT ----------------
 
 function exportScore() {
-
-  if (!logoLoaded) {
-    alert("Logo still loading. Try again in 1 second.");
-    return;
-  }
 
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
@@ -201,27 +168,53 @@ function exportScore() {
   ctx.fillStyle = "#004a87";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Logo
-  ctx.drawImage(logoImage, 340, 80, 200, 400);
+  const logo = new Image();
+  logo.src = "logo.png";
 
-  // Title
-  ctx.fillStyle = "white";
-  ctx.textAlign = "center";
-  ctx.font = "bold 70px Arial";
-  ctx.fillText("FINAL SCORE", 540, 600);
+  logo.onload = function() {
 
-  // Scores
-  ctx.font = "bold 90px Arial";
-  ctx.fillText("GATORS " + gatorsScore, 540, 760);
+    // Proportional Logo
+    const desiredWidth = 700;
+    const scale = desiredWidth / logo.width;
+    const newHeight = logo.height * scale;
 
-  const opponentName = document.getElementById("opponentName").value || "OPPONENT";
-  ctx.fillText(opponentName.toUpperCase() + " " + opponentScore, 540, 900);
+    const xPosition = (canvas.width - desiredWidth) / 2;
+    const yPosition = 120;
 
-  // Download
-  const link = document.createElement("a");
-  link.download = "gators-final-score.png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+    ctx.drawImage(logo, xPosition, yPosition, desiredWidth, newHeight);
+
+    // Title
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.font = "bold 70px Arial";
+    ctx.fillText("FINAL SCORE", 540, 650);
+
+    // Scores
+    ctx.font = "bold 90px Arial";
+    ctx.fillText("GATORS " + gatorsScore, 540, 820);
+
+    const opponentName = document.getElementById("opponentName").value || "OPPONENT";
+    ctx.fillText(opponentName.toUpperCase() + " " + opponentScore, 540, 950);
+
+    // Date + Time Stamp
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString();
+    const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    ctx.font = "40px Arial";
+    ctx.fillText(formattedDate + " • " + formattedTime, 540, 1030);
+
+    // File name with timestamp
+    const safeDate = now.toISOString().replace(/[:.]/g, "-");
+    const link = document.createElement("a");
+    link.download = "gators-final-score-" + safeDate + ".png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  logo.onerror = function() {
+    alert("Logo not found. Make sure logo.png is in the same folder.");
+  };
 }
 
 </script>
