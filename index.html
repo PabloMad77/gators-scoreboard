@@ -1,18 +1,17 @@
 <!DOCTYPE html>
+
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Gators Scoreboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-<!-- PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Gators">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#003f74">
 
-<!-- Home screen icon -->
 <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PabloMad77/gators-scoreboard/main/logo.PNG">
 <link rel="icon" href="https://raw.githubusercontent.com/PabloMad77/gators-scoreboard/main/logo.PNG">
 
@@ -185,7 +184,6 @@ th { background: var(--blue-dark); color: white; font-family: 'Oswald', sans-ser
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: rgba(249,115,22,0.08); }
 
-/* MODALS */
 .modal {
   display: none;
   position: fixed;
@@ -265,7 +263,28 @@ tr:hover td { background: rgba(249,115,22,0.08); }
 .add-player-row input { flex: 1; min-width: 120px; }
 
 .subtitle { opacity: 0.6; font-size: 14px; margin: 0 0 16px; }
+
+/* Saved indicator */
+.save-indicator {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: rgba(249,115,22,0.9);
+  color: black;
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 30px;
+  font-size: 14px;
+  pointer-events: none;
+  transition: transform 0.3s ease;
+  z-index: 99999;
+  letter-spacing: 1px;
+}
+.save-indicator.show { transform: translateX(-50%) translateY(0); }
 </style>
+
 </head>
 
 <body>
@@ -275,7 +294,7 @@ tr:hover td { background: rgba(249,115,22,0.08); }
   <h1>Gators</h1>
 
   <div>
-    <input id="categoryName" placeholder="Category / League">
+    <input id="categoryName" placeholder="Category / League" oninput="saveGameState()">
   </div>
 
   <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:6px;">
@@ -291,30 +310,32 @@ tr:hover td { background: rgba(249,115,22,0.08); }
       <option>Final</option>
       <option value="custom">Custom...</option>
     </select>
-    <input id="customJornada" placeholder="Custom match name" style="display:none; max-width:180px;">
+    <input id="customJornada" placeholder="Custom match name" style="display:none; max-width:180px;" oninput="saveGameState()">
   </div>
 
   <div class="score-container">
 
-    <div class="team">
-      <h2>Gators</h2>
-      <div class="score" id="gatorsScore">0</div>
-      <div class="score-buttons">
-        <button class="add1" onclick="updateScore('gators',1)">+1</button>
-        <button class="add6" onclick="updateScore('gators',6)">+6</button>
-        <button class="sub"  onclick="updateScore('gators',-1)">-1</button>
-      </div>
-    </div>
+```
+<div class="team">
+  <h2>Gators</h2>
+  <div class="score" id="gatorsScore">0</div>
+  <div class="score-buttons">
+    <button class="add1" onclick="updateScore('gators',1)">+1</button>
+    <button class="add6" onclick="updateScore('gators',6)">+6</button>
+    <button class="sub"  onclick="updateScore('gators',-1)">-1</button>
+  </div>
+</div>
 
-    <div class="team">
-      <input id="opponentName" placeholder="Opponent Name">
-      <div class="score" id="opponentScore">0</div>
-      <div class="score-buttons">
-        <button class="add1" onclick="updateScore('opponent',1)">+1</button>
-        <button class="add6" onclick="updateScore('opponent',6)">+6</button>
-        <button class="sub"  onclick="updateScore('opponent',-1)">-1</button>
-      </div>
-    </div>
+<div class="team">
+  <input id="opponentName" placeholder="Opponent Name" oninput="saveGameState()">
+  <div class="score" id="opponentScore">0</div>
+  <div class="score-buttons">
+    <button class="add1" onclick="updateScore('opponent',1)">+1</button>
+    <button class="add6" onclick="updateScore('opponent',6)">+6</button>
+    <button class="sub"  onclick="updateScore('opponent',-1)">-1</button>
+  </div>
+</div>
+```
 
   </div>
 
@@ -362,8 +383,12 @@ tr:hover td { background: rgba(249,115,22,0.08); }
   <button class="export-btn" onclick="exportStats()">Export Stats Image</button>
 </div>
 
+<!-- SAVE INDICATOR -->
+
+<div class="save-indicator" id="saveIndicator">✓ SAVED</div>
 
 <!-- IMAGE PREVIEW MODAL -->
+
 <div class="modal" id="previewModal">
   <div class="modal-box" style="max-width:500px; text-align:center;">
     <button class="modal-close" onclick="closeModal('previewModal')">✕</button>
@@ -378,6 +403,7 @@ tr:hover td { background: rgba(249,115,22,0.08); }
 </div>
 
 <!-- STAT MODAL -->
+
 <div class="modal" id="statModal">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('statModal')">✕</button>
@@ -388,34 +414,103 @@ tr:hover td { background: rgba(249,115,22,0.08); }
 </div>
 
 <!-- PLAYER MANAGER MODAL -->
+
 <div class="modal" id="playerModal">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('playerModal')">✕</button>
     <h3>Manage Players</h3>
 
-    <div id="playerList" style="margin-bottom:16px; text-align:left;"></div>
+```
+<div id="playerList" style="margin-bottom:16px; text-align:left;"></div>
 
-    <div style="background:rgba(255,255,255,0.06); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.1);">
-      <strong style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.8);">Add New Player</strong>
-      <div class="add-player-row">
-        <input id="newPlayerName" placeholder="Player name">
-        <select id="newPlayerUnit" style="background:rgba(255,255,255,0.1); color:white; border:2px solid rgba(255,255,255,0.15);">
-          <option value="offense">Offense</option>
-          <option value="defense">Defense</option>
-        </select>
-      </div>
-      <button onclick="addPlayer()" style="background:var(--orange); color:black; margin-top:10px; width:100%; padding:12px; font-weight:700;">
-        Add Player
-      </button>
-    </div>
+<div style="background:rgba(255,255,255,0.06); border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.1);">
+  <strong style="display:block; margin-bottom:8px; color:rgba(255,255,255,0.8);">Add New Player</strong>
+  <div class="add-player-row">
+    <input id="newPlayerName" placeholder="Player name">
+    <select id="newPlayerUnit" style="background:rgba(255,255,255,0.1); color:white; border:2px solid rgba(255,255,255,0.15);">
+      <option value="offense">Offense</option>
+      <option value="defense">Defense</option>
+    </select>
+  </div>
+  <button onclick="addPlayer()" style="background:var(--orange); color:black; margin-top:10px; width:100%; padding:12px; font-weight:700;">
+    Add Player
+  </button>
+</div>
+```
+
   </div>
 </div>
 
-
 <script>
 
-let gatorsScore = 0;
+// ─── State ───────────────────────────────────────────────────────────────────
+
+const GAME_KEY    = 'gators_game';
+const PLAYERS_KEY = 'gators_players';
+
+let gatorsScore   = 0;
 let opponentScore = 0;
+let players       = [];
+
+// ─── Persistence ─────────────────────────────────────────────────────────────
+
+function saveGameState() {
+  const state = {
+    gatorsScore,
+    opponentScore,
+    categoryName:  document.getElementById('categoryName').value,
+    opponentName:  document.getElementById('opponentName').value,
+    jornadaSelect: document.getElementById('jornadaSelect').value,
+    customJornada: document.getElementById('customJornada').value,
+  };
+  localStorage.setItem(GAME_KEY, JSON.stringify(state));
+  flashSaved();
+}
+
+function savePlayers() {
+  localStorage.setItem(PLAYERS_KEY, JSON.stringify(players));
+  flashSaved();
+}
+
+let _saveTimer = null;
+function flashSaved() {
+  const el = document.getElementById('saveIndicator');
+  el.classList.add('show');
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => el.classList.remove('show'), 1400);
+}
+
+function loadState() {
+  // Players
+  players = JSON.parse(localStorage.getItem(PLAYERS_KEY) || '[]');
+
+  // Game state
+  const raw = localStorage.getItem(GAME_KEY);
+  if (raw) {
+    try {
+      const s = JSON.parse(raw);
+      gatorsScore   = s.gatorsScore   || 0;
+      opponentScore = s.opponentScore || 0;
+      document.getElementById('gatorsScore').innerText   = gatorsScore;
+      document.getElementById('opponentScore').innerText = opponentScore;
+      document.getElementById('categoryName').value  = s.categoryName  || '';
+      document.getElementById('opponentName').value  = s.opponentName  || '';
+
+      const jSel = document.getElementById('jornadaSelect');
+      if (s.jornadaSelect) {
+        jSel.value = s.jornadaSelect;
+        if (s.jornadaSelect === 'custom') {
+          document.getElementById('customJornada').style.display = 'inline-block';
+          document.getElementById('customJornada').value = s.customJornada || '';
+        }
+      }
+    } catch(e) {}
+  }
+
+  renderAll();
+}
+
+// ─── Score ────────────────────────────────────────────────────────────────────
 
 function updateScore(team, val) {
   const key = team === 'gators' ? 'gatorsScore' : 'opponentScore';
@@ -431,11 +526,21 @@ function updateScore(team, val) {
   void el.offsetWidth;
   el.classList.add('bump');
   setTimeout(() => el.classList.remove('bump'), 200);
+  saveGameState();
 }
 
 function resetGame() {
-  if (confirm('Reset game? All scores will be cleared.')) {
-    location.reload();
+  if (confirm('Reset game? Scores, opponent name, and match info will be cleared. Players and their stats will be kept.')) {
+    gatorsScore   = 0;
+    opponentScore = 0;
+    document.getElementById('gatorsScore').innerText   = 0;
+    document.getElementById('opponentScore').innerText = 0;
+    document.getElementById('categoryName').value  = '';
+    document.getElementById('opponentName').value  = '';
+    document.getElementById('jornadaSelect').value = '';
+    document.getElementById('customJornada').value = '';
+    document.getElementById('customJornada').style.display = 'none';
+    saveGameState();
   }
 }
 
@@ -443,15 +548,10 @@ function handleJornadaChange() {
   const select = document.getElementById('jornadaSelect');
   const custom = document.getElementById('customJornada');
   custom.style.display = select.value === 'custom' ? 'inline-block' : 'none';
+  saveGameState();
 }
 
 // ─── Players ───────────────────────────────────────────────────────────────
-
-let players = JSON.parse(localStorage.getItem('gators_players') || '[]');
-
-function savePlayers() {
-  localStorage.setItem('gators_players', JSON.stringify(players));
-}
 
 function openPlayerManager() {
   renderPlayerList();
@@ -581,7 +681,9 @@ function renderAll() {
     `<tr><th>Player</th><th>INT</th><th>FLAG</th><th>SACK</th><th>TD</th></tr>` + defenseRows;
 }
 
-renderAll();
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+loadState();
 
 // ─── Modals ─────────────────────────────────────────────────────────────────
 
@@ -598,7 +700,7 @@ window.addEventListener('click', e => {
 // ─── Canvas Export ───────────────────────────────────────────────────────────
 
 const IG_W = 1080;
-const IG_H = 1350;
+const FOOTER_H = 180; // footer zone height (bigger than before)
 
 const C = {
   blue:      '#004a87',
@@ -662,36 +764,64 @@ function getMetaInfo() {
   return { category, jornada, timestamp };
 }
 
-function drawFooter(ctx) {
+function drawFooter(ctx, canvasH) {
   const { category, jornada, timestamp } = getMetaInfo();
-
-  ctx.fillStyle = C.orange;
-  ctx.fillRect(0, IG_H - 18, IG_W, 18);
-
-  ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  ctx.font = '500 28px Oswald, Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('GATORS FLAG FOOTBALL', IG_W / 2, IG_H - 110);
-
   const metaLine = [category, jornada].filter(Boolean).join('  ·  ');
+
+  // Dark footer background
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.fillRect(0, canvasH - FOOTER_H, IG_W, FOOTER_H);
+
+  // Orange bottom bar
+  ctx.fillStyle = C.orange;
+  ctx.fillRect(0, canvasH - 22, IG_W, 22);
+
+  // Separator line at top of footer
+  ctx.strokeStyle = C.orange;
+  ctx.lineWidth = 3;
+  ctx.globalAlpha = 0.4;
+  ctx.beginPath();
+  ctx.moveTo(60, canvasH - FOOTER_H);
+  ctx.lineTo(IG_W - 60, canvasH - FOOTER_H);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // "GATORS FLAG FOOTBALL" brand line
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = '600 38px Oswald, Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('GATORS FLAG FOOTBALL', IG_W / 2, canvasH - FOOTER_H + 52);
+
+  // Meta line (category · jornada)
   if (metaLine) {
     ctx.fillStyle = C.orange;
-    ctx.font = 'bold 30px Oswald, Arial';
-    ctx.fillText(metaLine.toUpperCase(), IG_W / 2, IG_H - 72);
-  }
+    ctx.font = 'bold 42px Oswald, Arial';
+    ctx.fillText(metaLine.toUpperCase(), IG_W / 2, canvasH - FOOTER_H + 104);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.font = '400 24px Oswald, Arial';
-  ctx.fillText(timestamp, IG_W / 2, IG_H - 36);
+    // Timestamp on next line
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 30px Oswald, Arial';
+    ctx.fillText(timestamp, IG_W / 2, canvasH - FOOTER_H + 148);
+  } else {
+    // No meta — just timestamp centered
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '400 32px Oswald, Arial';
+    ctx.fillText(timestamp, IG_W / 2, canvasH - FOOTER_H + 118);
+  }
 }
 
 function drawScoreCard(logo) {
+  // Fixed content height: top bar + logo area + cards + separator + footer
+  const LOGO_AREA  = 380;   // top bar + logo
+  const CARD_H     = 420;
+  const BELOW_CARD = 80;    // separator + breathing room
+  const IG_H = LOGO_AREA + CARD_H + BELOW_CARD + FOOTER_H;
+
   const canvas = document.createElement('canvas');
   canvas.width  = IG_W;
   canvas.height = IG_H;
   const ctx = canvas.getContext('2d');
 
-  // Background
   const bg = ctx.createLinearGradient(0, 0, IG_W, IG_H);
   bg.addColorStop(0,   '#001e47');
   bg.addColorStop(0.5, '#003166');
@@ -699,7 +829,6 @@ function drawScoreCard(logo) {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, IG_W, IG_H);
 
-  // Subtle diagonal accent
   ctx.save();
   ctx.globalAlpha = 0.05;
   ctx.fillStyle = C.orange;
@@ -712,11 +841,9 @@ function drawScoreCard(logo) {
   ctx.fill();
   ctx.restore();
 
-  // Orange top bar
   ctx.fillStyle = C.orange;
   ctx.fillRect(0, 0, IG_W, 18);
 
-  // Logo or title
   if (logo) {
     drawLogoWithGlow(ctx, logo, IG_W / 2, 190, 280);
   } else {
@@ -726,32 +853,29 @@ function drawScoreCard(logo) {
     ctx.fillText('GATORS', IG_W / 2, 155);
   }
 
-  // Team cards
-  const cardY = 370, cardH = 420, cardPad = 60;
+  const cardY = LOGO_AREA - 10;
+  const cardPad = 60;
   const halfW  = IG_W / 2 - cardPad;
   const card1X = cardPad;
   const card2X = IG_W / 2 + 20;
   const cardW  = halfW - 20;
 
-  // Gators card
-  roundRect(ctx, card1X, cardY, cardW, cardH, 28);
+  roundRect(ctx, card1X, cardY, cardW, CARD_H, 28);
   ctx.fillStyle = 'rgba(249,115,22,0.1)';
   ctx.fill();
-  roundRect(ctx, card1X, cardY, cardW, cardH, 28);
+  roundRect(ctx, card1X, cardY, cardW, CARD_H, 28);
   ctx.strokeStyle = C.orange;
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  // Opponent card
-  roundRect(ctx, card2X, cardY, cardW, cardH, 28);
+  roundRect(ctx, card2X, cardY, cardW, CARD_H, 28);
   ctx.fillStyle = 'rgba(255,255,255,0.05)';
   ctx.fill();
-  roundRect(ctx, card2X, cardY, cardW, cardH, 28);
+  roundRect(ctx, card2X, cardY, cardW, CARD_H, 28);
   ctx.strokeStyle = 'rgba(255,255,255,0.2)';
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  // Team labels
   ctx.fillStyle = C.orange;
   ctx.font = 'bold 44px Oswald, Arial';
   ctx.textAlign = 'center';
@@ -762,7 +886,6 @@ function drawScoreCard(logo) {
   ctx.font = 'bold 44px Oswald, Arial';
   ctx.fillText(opponent.toUpperCase(), card2X + cardW / 2, cardY + 72);
 
-  // Scores
   ctx.font = 'bold 220px Oswald, Arial';
   ctx.fillStyle = C.white;
   ctx.fillText(String(gatorsScore), card1X + cardW / 2, cardY + 320);
@@ -770,8 +893,7 @@ function drawScoreCard(logo) {
   ctx.fillStyle = 'rgba(255,255,255,0.6)';
   ctx.fillText(String(opponentScore), card2X + cardW / 2, cardY + 320);
 
-  // VS pill
-  const vsX = IG_W / 2, vsY = cardY + cardH / 2 + 10;
+  const vsX = IG_W / 2, vsY = cardY + CARD_H / 2 + 10;
   ctx.fillStyle = C.orange;
   roundRect(ctx, vsX - 42, vsY - 46, 84, 70, 35);
   ctx.fill();
@@ -780,18 +902,7 @@ function drawScoreCard(logo) {
   ctx.textAlign = 'center';
   ctx.fillText('VS', vsX, vsY + 14);
 
-  // Separator
-  const sepY = cardY + cardH + 54;
-  ctx.strokeStyle = C.orange;
-  ctx.lineWidth = 3;
-  ctx.globalAlpha = 0.3;
-  ctx.beginPath();
-  ctx.moveTo(80, sepY);
-  ctx.lineTo(IG_W - 80, sepY);
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  drawFooter(ctx);
+  drawFooter(ctx, IG_H);
   return canvas;
 }
 
@@ -801,18 +912,15 @@ function drawStatsCard(logo) {
   canvas.height = IG_H;
   const ctx = canvas.getContext('2d');
 
-  // Background
   const bg = ctx.createLinearGradient(0, 0, IG_W, IG_H);
   bg.addColorStop(0, '#001e47');
   bg.addColorStop(1, '#004a87');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, IG_W, IG_H);
 
-  // Orange top bar
   ctx.fillStyle = C.orange;
   ctx.fillRect(0, 0, IG_W, 18);
 
-  // Logo + ESTADÍSTICAS inline
   const TITLE_Y = 140;
   if (logo) {
     const logoSize = 90;
@@ -841,7 +949,6 @@ function drawStatsCard(logo) {
     ctx.fillText('ESTADÍSTICAS', IG_W / 2, TITLE_Y);
   }
 
-  // Table helper
   function drawTable(title, cols, rows, startY) {
     const PAD = 50;
     const tableW = IG_W - PAD * 2;
@@ -901,7 +1008,6 @@ function drawStatsCard(logo) {
     return tableY + totalH;
   }
 
-  // Offense — only players with stats
   const offPlayers = players.filter(p => p.unit === 'offense');
   const offWithStats = offPlayers.filter(p => p.td > 0 || p.catch > 0 || p.xp > 0);
   const offRows = offWithStats.length
@@ -910,7 +1016,6 @@ function drawStatsCard(logo) {
 
   let nextY = drawTable('OFENSA', ['Jugador','TD','CATCH','XP'], offRows, 215);
 
-  // Defense — only players with stats
   const defPlayers = players.filter(p => p.unit === 'defense');
   const defWithStats = defPlayers.filter(p => p.int > 0 || p.flag > 0 || p.sack > 0 || p.defTd > 0);
   const defRows = defWithStats.length
@@ -966,5 +1071,6 @@ function exportStats() {
 }
 
 </script>
+
 </body>
 </html>
